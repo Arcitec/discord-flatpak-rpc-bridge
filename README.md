@@ -1,17 +1,18 @@
 # discord-flatpak-rpc-bridge
 
-Enables the use of Discord RPC in Flatpak applications when Discord is running
-as a native (host) application.
+Enables the use of Discord's Rich Presence (RPC) in Flatpak applications when
+your Discord client is running as a native (host) application.
 
 This is achieved by creating a bridge between the native Discord application's
 RPC socket and the special RPC path required by various Flatpak applications.
 
-The bridge is necessary because you cannot map the host's Discord RPC socket into
-Flatpaks directly, since Flatpak *doesn't support* mapping files that constantly
-disappear and reappear (which the socket does whenever you close/reopen Discord).
+The bridge is necessary because you *cannot* map the host's Discord RPC socket
+into Flatpaks directly, since Flatpak *doesn't support* mapping host files that
+constantly disappear and reappear (which the normal Host RPC socket does whenever
+you close or reopen Discord).
 
 Having this bridge will ensure that all Flatpaks with Discord RPC support work
-with your native Discord without needing *any* non-standard modifications.
+with your native Discord client without needing *any* non-standard modifications.
 
 Note: Always refer to your Flatpak app's documentation to see if they provide any
 extra instructions for enabling Discord RPC. Our bridge provides the necessary
@@ -24,6 +25,7 @@ RPC socket, but it's up to the Flatpak applications to actually *use it.*
 - [Vesktop](https://github.com/Vencord/Vesktop) Native.
 - [arRPC](https://github.com/OpenAsar/arrpc) Native (and all other alternative
   Discord clients based on arRPC).
+- Any other third-party clients that use the standard Discord RPC socket path.
 - Ensure that Discord RPC is enabled in your client. The official client always
   provides it, whereas Vesktop for example has it under "Vesktop Settings: Enable
   Rich Presence via arRPC".
@@ -68,9 +70,10 @@ RPC socket, but it's up to the Flatpak applications to actually *use it.*
 ```sh
 ./install.sh -u
 ```
-- The service will automatically stop for the *currently active* user.
+- The service will also automatically stop for the *currently active* user.
 - Note: If multiple users are simultaneously logged into your system, they should
-  either log out or restart the machine, which will stop their services too.
+  either log out or restart the machine, which will stop their running services
+  too.
 
 
 ## Frequently Asked Questions
@@ -86,6 +89,7 @@ RPC socket, but it's up to the Flatpak applications to actually *use it.*
 ```
 - Now you can use the per-user startup toggles. They have no effect if automatic
   startup mode is active, which is why you had to switch to manual mode first.
+- The other options are described below.
 - Enable bridge startup for the currently active user.
 ```sh
 ./install.sh -e
@@ -178,7 +182,7 @@ systemctl --user start discord-flatpak-rpc-bridge.socket
 - To be more specific, only a single socket proxy service will be running, and
   it handles *all* multi-application connections between the two bridged sockets.
 - Furthermore, this bridge fully supports the appearance and disappearance of
-  the Host target socket at `/run/user/1000/discord-ipc-0`, meaning that you're
+  the Host's target socket at `/run/user/1000/discord-ipc-0`, meaning that you're
   welcome to close and reopen your native Discord client as much as you want
   without ever losing the socket connection for your running Flatpak apps.
 - If anything attempts to connect to the Flatpak socket location while Discord
@@ -204,5 +208,20 @@ systemctl --user start discord-flatpak-rpc-bridge.socket
   RPC connection method, which is described on the [Discord Flatpak Wiki](https://github.com/flathub/com.discordapp.Discord/wiki/Rich-Precense-(discord-rpc)#flatpak-applications),
   where there's a list of "suggested changes". All Flatpaks that want to support
   Discord RPC need to perform those steps to get access to the RPC socket.
-- Any reports about Flatpak app problems on this repository will lead to a ban
-  from making any further tickets.
+- You can use [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal)
+  to inspect the Flatpak app's permissions. If they have given themselves access
+  to `xdg-run/app/com.discordapp.Discord:create`, then it's a good indication that
+  they've *probably* configured their launch-wrapper or app code correctly too.
+- Warning: It's *not enough* to just add access to that directory. All Flatpak apps
+  need further adaptations. Checking for the permission is just meant as a quick
+  way for *you* to see if the author *appears* to have done the required preparations,
+  since Flatpak apps will *never* be able to connect to Discord RPC without that
+  permission.
+- Note: In some cases, Flatpak app authors have disabled Discord RPC permissions
+  by default (since many people view it as unnecessary). They'll often provide
+  instructions for how to enable the necessary permissions manually. Always check
+  their official Flatpak instructions for help. The information is often placed
+  in the application's Flathub manifest repository or their official development
+  repository, usually in their readme, wiki, or in their past tickets.
+- Any reports about specific Flatpak app problems on this repository will lead
+  to a ban from making any further tickets.
