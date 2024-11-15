@@ -1,0 +1,20 @@
+[Unit]
+Description=Discord Native-to-Flatpak RPC Bridge Service
+Requires=discord-flatpak-rpc-bridge.socket
+After=discord-flatpak-rpc-bridge.socket
+
+[Service]
+# When this service is awakened by the ".socket", a single proxy instance starts
+# and stays resident, forwarding traffic between the sockets. Proxying works even
+# if this proxy service is started before the target socket exists, or if the
+# target socket later disappears and re-appears (ie. when restarting Discord).
+Type=notify
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd %t/discord-ipc-0
+
+# Isolate the proxy-process from the system's regular tmp-dir and network.
+PrivateTmp=yes
+PrivateNetwork=yes
+
+[Install]
+Also=discord-flatpak-rpc-bridge.socket
+WantedBy=default.target

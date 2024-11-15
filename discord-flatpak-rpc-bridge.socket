@@ -1,0 +1,22 @@
+[Unit]
+Description=Discord Native-to-Flatpak RPC Bridge Socket
+
+[Socket]
+# Use the highest socket packet priority (SO_PRIORITY).
+Priority=6
+
+# The per-user path hierarchy for the ListenStream socket will be automatically
+# created by systemd when this unit starts, with correct owner:group and perms.
+# NOTE: "%t" corresponds to "$XDG_RUNTIME_DIR" (such as "/run/user/1000").
+# NOTE: If the target socket-file exists, it will be automatically deleted and
+# re-created as a socket (even if it's a regular, non-empty file). However, if
+# it's a directory (which it would NEVER be unless the user creates it), then
+# the socket unit will fail to start due to "socket address already in use".
+# NOTE: It's unclear what happens if the user ALSO has the REAL Discord Flatpak
+# on the system and it has ALREADY allocated the target socket, or if they start
+# that client LATER, but these are NOT the intended use-cases for this unit, and
+# therefore will NOT be investigated and NO SUPPORT is provided for such usage!
+ListenStream=%t/app/com.discordapp.Discord/discord-ipc-0
+
+[Install]
+WantedBy=sockets.target
