@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (C) 2024 Arcitec
+# Copyright (C) 2024-2026 Arcitec
 # SPDX-License-Identifier: GPL-2.0-only
 
 set -e
@@ -66,7 +66,7 @@ if [[ "${_ACTION}" == "install" ]]; then
 
     # Install the unit files in the system-wide user unit location.
     # NOTE: This is the correct location for "local administrator-installed units".
-    sudo install -D -t "/etc/systemd/user" -m "u=rw,go=r,a-s" "${UNIT_FILES[@]}"
+    sudo install -D -t "/etc/systemd/user" -m 644 "${UNIT_FILES[@]}"
 
     # Update systemctl's internal state to detect the new unit files.
     # NOTE: Yes, the "--user" variant is required for a complete reload.
