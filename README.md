@@ -48,7 +48,8 @@ RPC socket, but it's up to the Flatpak applications to actually *use it.*
 ## Installation
 
 - Requires a systemd-based Linux distro (which is 99.9% of distros these days).
-  If you don't know, then you're definitely using a systemd-based distro.
+  If you don't know, then you're definitely using a systemd-based distro. For
+  OpenRC, see the [OpenRC installation](#installation-openrc) section below.
 - Clone [this repository](https://github.com/Arcitec/discord-flatpak-rpc-bridge)
   or [download the latest code manually](https://github.com/Arcitec/discord-flatpak-rpc-bridge/archive/refs/heads/main.zip).
 - Run the installation process.
@@ -59,6 +60,40 @@ RPC socket, but it's up to the Flatpak applications to actually *use it.*
   every user on your system. It also *immediately* starts for your current user.
 - You can now use your native Discord client and your Flatpak apps without any
   more worries or issues. Have fun!
+
+
+## Installation (OpenRC)
+
+- For OpenRC-based distros such as Gentoo. Requires OpenRC 0.60 or newer with
+  user services enabled (via `pam_openrc`), and `socat` (Gentoo: `net-misc/socat`).
+- OpenRC has no socket activation, so instead of a lazily started proxy, a single
+  tiny `socat` process stays resident and forwards every connection to your
+  native Discord RPC socket. It still survives Discord closing and reopening.
+- Run the OpenRC installer as your regular user (*not* via `sudo`, it asks for
+  `sudo` by itself when needed).
+```sh
+./install-openrc.sh
+```
+- The bridge is now installed, added to your user's `default` runlevel, and
+  *immediately* started for your current user.
+- OpenRC cannot enable user services for every user at once, so other users on
+  the same machine must enable it for themselves.
+```sh
+./install-openrc.sh -e
+```
+- Disable it again for the current user.
+```sh
+./install-openrc.sh -d
+```
+- Check the bridge status.
+```sh
+rc-service --user discord-flatpak-rpc-bridge status
+```
+- Uninstall (every other user that ran `-e` should run `-d` first, to avoid
+  leaving dangling runlevel links in their `~/.config/rc`).
+```sh
+./install-openrc.sh -u
+```
 
 
 ## Uninstalling

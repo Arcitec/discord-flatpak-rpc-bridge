@@ -1,0 +1,38 @@
+#!/sbin/openrc-run
+# Copyright (C) 2024-2026 Arcitec
+# SPDX-License-Identifier: GPL-2.0-only
+
+# OpenRC user-service port of "discord-flatpak-rpc-bridge.{socket,service}".
+#
+# OpenRC has no socket activation, so instead of a systemd ".socket" that lazily
+# spawns "systemd-socket-proxyd", we run a single resident "socat" listener. It
+# forks one child per incoming connection, and every child connects to the host
+# socket at that moment. Proxying therefore works even if this service starts
+# before Discord, and survives Discord deleting and re-creating its socket.
+# If Discord isn't running, the incoming connection is simply closed again.
+# NOTE: "${XDG_RUNTIME_DIR}" corresponds to systemd's "%t" (ie. "/run/user/1000").
+
+description="Discord Native-to-Flatpak RPC Bridge"
+
+supervisor=supervise-daemon
+command="/usr/bin/socat"
+
+_listen_dir="${XDG_RUNTIME_DIR}/app/com.discordapp.Discord"
+_listen_socket="${_listen_dir}/discord-ipc-0"
+_target_socket="${XDG_RUNTIME_DIR}/discord-ipc-0"
+
+# "unlink-early" replaces any stale socket-file left behind by a previous run.
+command_args="UNIX-LISTEN:${_listen_socket},fork,unlink-early,mode=600 UNIX-CONNECT:${_target_socket}"
+
+start_pre() {
+	if [ -z "${XDG_RUNTIME_DIR}" ]; then
+		eerror "XDG_RUNTIME_DIR is not set, this must run as an OpenRC user service"
+		return 1
+	fi
+
+	# Flatpak normally creates these directories too, but we may start before any
+	# Flatpak app has ever run, so ensure they exist with Flatpak's usual perms.
+	# NOTE: "checkpath" doesn't create missing parents, so create "app" first.
+	checkpath -d -m 0700 "${XDG_RUNTIME_DIR}/app" || return 1
+	checkpath -d -m 0755 "${_listen_dir}"
+}
